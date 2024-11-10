@@ -61,6 +61,7 @@ resource "aws_instance" "ubuntu_instance_1" {
   instance_type = "t2.micro" # Adjust instance type as needed
   subnet_id     = aws_subnet.subnet_a.id
   vpc_security_group_ids = [aws_security_group.allow_ssh_http.id]
+  key_name = "ansiblekey"
 
   tags = {
     Name = "Master"
@@ -72,6 +73,7 @@ resource "aws_instance" "ubuntu_instance_2" {
   instance_type = "t2.micro" # Adjust instance type as needed
   subnet_id     = aws_subnet.subnet_b.id
   vpc_security_group_ids = [aws_security_group.allow_ssh_http.id]
+  key_name = "ansiblekey"
 
   tags = {
     Name = "Node"
