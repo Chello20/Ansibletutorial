@@ -1,0 +1,152 @@
+---
+- name: setup_webserver
+  hosts: Node-Servers
+  become: yes
+  tasks:
+
+    # Step 1: Update all packages
+    - name: Update all packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    # Step 2: Install Apache if not installed
+    - name: Install apache2
+      apt:
+        name: apache2
+        state: present
+
+    # Step 3: Ensure apache2 service is running
+    - name: Ensure apache2 is started and enabled
+      systemd:
+        name: apache2
+        state: started
+        enabled: yes
+
+    # Step 4: Check Apache status
+    - name: Check if apache2 is running
+      shell: sudo systemctl status apache2
+      register: apache_status
+      ignore_errors: yes
+
+    - name: Show Apache status output
+      debug:
+        var: apache_status.stdout
+
+    # Step 5: Create login page (username/password form)
+    - name: Create the login page with form
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Login Page</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f9;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+              }
+              .login-container {
+                background-color: #fff;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                width: 300px;
+                text-align: center;
+              }
+              h1 {
+                color: #333;
+              }
+              label {
+                text-align: left;
+                display: block;
+                margin-bottom: 10px;
+                color: #555;
+              }
+              input[type="text"], input[type="password"] {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+              }
+              button {
+                width: 100%;
+                padding: 10px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+              }
+              button:hover {
+                background-color: #45a049;
+              }
+              .error-message {
+                color: red;
+                font-size: 14px;
+                margin-top: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="login-container">
+              <h1>Login</h1>
+              <form action="#">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+                <button type="submit">Login</button>
+              </form>
+              <div class="error-message" id="error-message"></div>
+            </div>
+          </body>
+          </html>
+
+    # Step 6: Check if the login page exists and verify its content
+    - name: Verify that index.html is created
+      command: cat /var/www/html/index.html
+      register: html_content
+      ignore_errors: yes
+
+    - name: Show the content of the index.html
+      debug:
+        var: html_content.stdout
+
+    # Step 7: Tail Apache logs to monitor activity (show last 10 lines only)
+    - name: Tail apache2 access logs
+      command: sudo tail -n 10 /var/log/apache2/access.log
+      register: access_log_output
+      ignore_errors: yes
+
+    - name: Show access log output
+      debug:
+        var: access_log_output.stdout
+
+    - name: Tail apache2 error logs
+      command: sudo tail -n 10 /var/log/apache2/error.log
+      register: error_log_output
+      ignore_errors: yes
+
+    - name: Show error log output
+      debug:
+        var: error_log_output.stdout
+
+    # Step 8: Verify Apache response using curl
+    - name: Check Apache HTTP response
+      shell: curl http://localhost
+      register: apache_response
+
+    - name: Show the HTTP response
+      debug:
+        var: apache_response.stdout
